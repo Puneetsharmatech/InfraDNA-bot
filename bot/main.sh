@@ -1,31 +1,25 @@
 #!/bin/bash
 
-# --- NEW: Define absolute paths ---
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
-PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
-# --- END NEW ---
+# Main orchestrator script for the InfraDNA Bot
 
-# Source the configuration using an absolute path
-source "$PROJECT_ROOT/bot/config.sh"
+# Source the configuration file
+source ./config.sh
 
-# Ensure a clean run
-rm -rf "$PROJECT_ROOT/$CLONE_DIR"/*
+# Ensure a clean run by removing old clones
+rm -rf "$CLONE_DIR"/*
 
-# Initialize the database file using an absolute path
-echo "Repository,Directory,Fingerprint" > "$PROJECT_ROOT/$DB_FILE"
+# Initialize the database file with a header
+echo "Repository,Directory,Fingerprint" > "$DB_FILE"
 
-echo "INFO: Finding repositories..."
+echo "INFO: Finding repositories for user: $USER"
 
-# Get the GitHub user from config.sh
-USER=$(grep "^USER=" "$PROJECT_ROOT/bot/config.sh" | cut -d'"' -f2)
-
+# Find repositories and loop through each one, calling the processing script
 gh repo list "$USER" --limit 5 | while read -r repo_full_name _; do
-  # Pass the project root and repo name to the processing script
-  "$SCRIPT_DIR/process_repo.sh" "$PROJECT_ROOT" "$repo_full_name"
+  ./process_repo.sh "$repo_full_name"
 done
 
-# Call the analysis script (no changes needed for this one yet)
-"$SCRIPT_DIR/analyze_results.sh"
+# Call the analysis script to find duplicates
+./analyze_results.sh
 
 echo "---"
 echo "INFO: Script finished."
